@@ -215,10 +215,10 @@ int main()
     // TODO 10 Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь что тип количества элементов такой же в кернеле)
     {
          unsigned int i = 0;
-         clSetKernelArg(kernel, i++, sizeof(b_as), &b_as);
-         clSetKernelArg(kernel, i++, sizeof(b_bs), &b_bs);
-         clSetKernelArg(kernel, i++, sizeof(b_cs), &b_cs);
-         clSetKernelArg(kernel, i++, sizeof(n), &n);
+         OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(b_as), &b_as));
+         OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(b_bs), &b_bs));
+         OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(b_cs), &b_cs));
+         OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(n), &n));
     }
 
     // TODO 11 Выше увеличьте n с 1000*1000 до 100*1000*1000 (чтобы дальнейшие замеры были ближе к реальности)
@@ -238,7 +238,7 @@ int main()
             cl_event cur_event;
             OCL_SAFE_CALL(clEnqueueNDRangeKernel(command_queue, kernel, 1, nullptr, &global_work_size, &workGroupSize, 0,
                                   nullptr, &cur_event));
-            clWaitForEvents(1, &cur_event);
+            OCL_SAFE_CALL(clWaitForEvents(1, &cur_event));
             t.nextLap(); // При вызове nextLap секундомер запоминает текущий замер (текущий круг) и начинает замерять время следующего круга
         }
         // Среднее время круга (вычисления кернела) на самом деле считаются не по всем замерам, а лишь с 20%-перцентайля по 80%-перцентайль (как и стандартное отклониение)
@@ -252,7 +252,7 @@ int main()
         // - Флопс - это число операций с плавающей точкой в секунду
         // - В гигафлопсе 10^9 флопсов
         // - Среднее время выполнения кернела равно t.lapAvg() секунд
-        std::cout << "GFlops: " << t.lapAvg()/n/(1000*1000*1000) << std::endl;
+        std::cout << "GFlops: " << n/t.lapAvg()/(1000*1000*1000) << std::endl;
 
         // TODO 14 Рассчитайте используемую пропускную способность обращений к видеопамяти (в гигабайтах в секунду)
         // - Всего элементов в массивах по n штук
@@ -271,7 +271,7 @@ int main()
             t.nextLap();
         }
         std::cout << "Result data transfer time: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
-        std::cout << "VRAM -> RAM bandwidth: " << (20*n*sizeof(float))/(1024*1024*1024)/t.lapAvg() << " GB/s" << std::endl;
+        std::cout << "VRAM -> RAM bandwidth: " << (1.0*n*sizeof(float))/(1024*1024*1024)/t.lapAvg() << " GB/s" << std::endl;
     }
 
     // TODO 16 Сверьте результаты вычислений со сложением чисел на процессоре (и убедитесь, что если в кернеле сделать намеренную ошибку, то эта проверка поймает ошибку)
